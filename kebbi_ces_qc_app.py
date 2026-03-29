@@ -1,6 +1,35 @@
 # =============================================================================
 # SARMAAN II COVERAGE EVALUATION DASHBOARD - KEBBI STATE
 # =============================================================================
+# 
+# DATA SCHEMA INFORMATION (Updated: March 29, 2026)
+# -------------------------------------------------
+# This dashboard processes data from KoboToolbox with the following structure:
+#
+# 1. MAIN SHEET: "SARMAAN II C2 KEBBI COVERAGE EVALUATION LIVE FORM"
+#    - Household questionnaire data
+#    - MDA Date Reference: 12th to 16th December 2025
+#    - Key columns: Q2 (LGA), Q3 (Ward), Q4 (Community), Q8 (Date)
+#    - Household details (Q10-Q22), Assets (Q23-Q47), Water/Sanitation (Q48-Q66)
+#    - MDA Acceptability & Coverage (Q86-Q137)
+#
+# 2. CHILD_INFO SHEET
+#    - Basic child roster (all children in HH)
+#    - Columns: child_id, Name, Age, is_eligible, child_label
+#    - Age reference: "as at when MDA was done (12th to 16th December 2025)"
+#
+# 3. CHILD_INFOO SHEET (Main Coverage Data)
+#    - Detailed info for eligible children (1-59 months)
+#    - Q88: Child name and age (12th to 16th December 2025)
+#    - Q89: Sex, Q90: Offered AZM, Q91-Q92: Reasons not offered/refused
+#    - Q93: Weighed, Q94: Swallowed AZM, Q95: Swallowed in presence
+#    - Q96-Q97: Reasons not swallowed, Q98-Q101: Adverse reactions
+#
+# 4. NET_REPEAT SHEET
+#    - Mosquito net data per household
+#    - Q81-Q85: Net acquisition, usage, and reasons for non-use
+#
+# =============================================================================
 
 import streamlit as st
 import pandas as pd
@@ -31,7 +60,13 @@ LGA_CREDENTIALS = {
 }
 
 # Load KoboToolbox URL from Streamlit secrets (secure)
-KOBO_DATA_URL = st.secrets.get("KOBO_DATA_URL", "")
+# Set your KoboToolbox data URL here or in Streamlit secrets
+try:
+    KOBO_DATA_URL = st.secrets.get("KOBO_DATA_URL", "")
+except Exception:
+    KOBO_DATA_URL = ""  # Default empty if secrets not configured
+
+
 
 # ---------------- COMMUNITY MAPPING DATA ----------------
 COMMUNITY_MAPPING_DATA = """Q2. Local Government Area	Q3.Ward	Q4. Community Name	community_name	Planned HH
@@ -563,11 +598,12 @@ def preprocess_data(sheets_dict):
     # Process child_info sheet
     if not sheets_dict['child_info'].empty:
         df_child_info = sheets_dict['child_info'].copy()
-        # Convert age to numeric - check for both old and new date formats
+        # Convert age to numeric - KEBBI SPECIFIC: MDA date was 12th to 16th December 2025
         age_col_variants = [
-            'Age of child ${child_id} as at when MDA was done (13th to 22nd December 2025)',
-            'Age of child ${child_id} as at when MDA was done (6th to 11th December 2025)',
-            'Age of child ${child_id} as at when MDA was done (19th to 25th July 2025)'
+            'Age of ${child_name} as at when MDA was done (12th to 16th December 2025)',
+            'Age of child ${child_id} as at when MDA was done (12th to 16th December 2025)',
+            'age_months',
+            'child_age'
         ]
         for age_col in age_col_variants:
             if age_col in df_child_info.columns:
@@ -578,17 +614,15 @@ def preprocess_data(sheets_dict):
                 break
         sheets_dict['child_info'] = df_child_info
     
-    # Process child_infoo sheet (children <5 years)
+    # Process child_infoo sheet (children 1-59 months)
     if not sheets_dict['child_infoo'].empty:
         df_child_infoo = sheets_dict['child_infoo'].copy()
-        # Convert age column - check for Adamawa column name first
+        # Convert age column - KEBBI SPECIFIC: MDA date was 12th to 16th December 2025
         age_col_variants = [
+            'Q88. Child name and age ${child_idd} as at when MDA was done (12th to 16th December 2025)',
             'child_names11',
-            'Q88. Child name and age ${child_idd} as at when MDA was done (27th November to 2nd December or 13th to 14th December 2025)',
-            'Q88. Child name and age ${child_idd} as at when MDA was done (21st to 27th November 2025)',
-            'Q88. Child name and age ${child_idd} as at when MDA was done (13th to 22nd December 2025)',
-            'Q88. Child name and age ${child_idd} as at when MDA was done (6th to 11th December 2025)',
-            'Q88. Child name and age ${child_idd} as at when MDA was done (19th to 25th July 2025)'
+            'age_months',
+            'child_age'
         ]
         for age_col in age_col_variants:
             if age_col in df_child_infoo.columns:
@@ -1119,13 +1153,9 @@ def perform_qc_checks(df, child_df=None, full_df=None):
     
     # QC Check 5: Check child_infoo sheet if provided (children 1-59 months)
     if child_df is not None and not child_df.empty:
-        # Find child sheet columns - KEBBI SPECIFIC (exact column name from schema)
+        # Find child sheet columns - KEBBI SPECIFIC: MDA was 12th to 16th December 2025
         age_col = find_column(child_df, [
-            'Q88. Child name and age ${child_idd} as at when MDA was done (27th November to 2nd December or 13th to 14th December 2025)',
-            'Q88. Child name and age ${child_idd} as at when MDA was done (21st to 27th November 2025)',
-            'Q88. Child name and age ${child_idd} as at when MDA was done (13th to 22nd December 2025)',
-            'Q88. Child name and age ${child_idd} as at when MDA was done (6th to 11th December 2025)',
-            'Q88. Child name and age ${child_idd} as at when MDA was done (19th to 25th July 2025)',
+            'Q88. Child name and age ${child_idd} as at when MDA was done (12th to 16th December 2025)',
             'child_names11',
             'age_months',
             'child_age'
@@ -1943,9 +1973,9 @@ def run_dashboard():
                 st.write(f"- Occupation column: **{occupation_col if occupation_col else '❌ NOT FOUND'}**")
                 if education_col and occupation_col:
                     # Show unique values for debugging
-                    st.write(f"**Unique Education values:**")
+                    st.write("**Unique Education values:**")
                     st.code("\n".join(filtered_df[education_col].dropna().unique().astype(str).tolist()[:20]))
-                    st.write(f"**Unique Occupation values:**")
+                    st.write("**Unique Occupation values:**")
                     st.code("\n".join(filtered_df[occupation_col].dropna().unique().astype(str).tolist()[:20]))
                     
                     # Check for "No Formal Education"
@@ -2098,10 +2128,7 @@ def run_dashboard():
                     st.code("\n".join([f"{i+1}. {col}" for i, col in enumerate(child_infoo_df.columns)]))
                     
                     age_col = find_column(child_infoo_df, [
-                        'Q88. Child name and age ${child_idd} as at when MDA was done (21st to 27th November 2025)',
-                        'Q88. Child name and age ${child_idd} as at when MDA was done (13th to 22nd December 2025)',
-                        'Q88. Child name and age ${child_idd} as at when MDA was done (6th to 11th December 2025)',
-                        'Q88. Child name and age ${child_idd} as at when MDA was done (19th to 25th July 2025)',
+                        'Q88. Child name and age ${child_idd} as at when MDA was done (12th to 16th December 2025)',
                         'age_months',
                         'child_age'
                     ])
