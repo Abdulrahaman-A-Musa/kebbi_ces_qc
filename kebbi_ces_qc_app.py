@@ -21,9 +21,13 @@
 # 3. CHILD_INFOO SHEET (Main Coverage Data)
 #    - Detailed info for eligible children (1-59 months)
 #    - Q88: Child name and age (12th to 16th December 2025)
-#    - Q89: Sex, Q90: Offered AZM, Q91-Q92: Reasons not offered/refused
-#    - Q93: Weighed, Q94: Swallowed AZM, Q95: Swallowed in presence
+#    - Q89: Sex of ${child_names11}
+#    - Q90: Did someone offer ${child_names11} azithromycin...
+#    - Q91-Q92: Reasons not offered/refused
+#    - Q93: Height measured (changed from "weighed")
+#    - Q94: Swallowed AZM, Q95: Swallowed in presence
 #    - Q96-Q97: Reasons not swallowed, Q98-Q101: Adverse reactions
+#    - NOTE: All questions use ${child_names11} (not ${child_idd})
 #
 # 4. NET_REPEAT SHEET
 #    - Mosquito net data per household
@@ -633,9 +637,13 @@ def preprocess_data(sheets_dict):
     # Process net_repeat sheet
     if not sheets_dict['net_repeat'].empty:
         df_net = sheets_dict['net_repeat'].copy()
-        # Convert months column to numeric
-        months_col = 'Q81. Net ${net_id} :How many months ago did your household get the mosquito net?'
-        if months_col in df_net.columns:
+        # Convert months column to numeric - handle both formats (with/without space after colon)
+        months_col = find_column(df_net, [
+            'Q81. Net ${net_id}: How many months ago did your household get the mosquito net?',  # NEW format (space after colon)
+            'Q81. Net ${net_id} :How many months ago did your household get the mosquito net?',  # OLD format (no space)
+            'months_since_net'
+        ])
+        if months_col:
             df_net['months_since_net'] = pd.to_numeric(df_net[months_col], errors='coerce')
         sheets_dict['net_repeat'] = df_net
     
@@ -1161,7 +1169,8 @@ def perform_qc_checks(df, child_df=None, full_df=None):
             'child_age'
         ])
         q94_col = find_column(child_df, [
-            'Q94. Did child ${child_idd} swallow the AZM offered?',
+            'Q94. Did ${child_names11} swallow the AZM offered?',
+            'Q94. Did child ${child_idd} swallow the AZM offered?',  # Fallback for old format
             'swallow',
             'Q94',
             'child_swallow_azm'
@@ -1920,7 +1929,7 @@ def run_dashboard():
         st.success("✅ **No QC issues found!** All data quality checks passed successfully.")
         
         # COMPREHENSIVE Debug info to help understand why no issues found
-        with st.expander("🔍 DEBUG: Show ALL Columns & QC Check Results", expanded=True):
+        with st.expander("🔍 DEBUG: Show ALL Columns & QC Check Results", expanded=False):
             st.write(f"**Total records in filtered_df:** {len(filtered_df)}")
             st.write(f"**Total columns in filtered_df:** {len(filtered_df.columns)}")
             st.write(f"**Child records (child_infoo):** {len(child_infoo_df) if child_infoo_df is not None and not child_infoo_df.empty else 0}")
@@ -2133,7 +2142,8 @@ def run_dashboard():
                         'child_age'
                     ])
                     q94_col = find_column(child_infoo_df, [
-                        'Q94. Did child ${child_idd} swallow the AZM offered?',
+                        'Q94. Did ${child_names11} swallow the AZM offered?',
+                        'Q94. Did child ${child_idd} swallow the AZM offered?',  # Fallback for old format
                         'Q94',
                         'child_swallow_azm',
                         'swallow'
@@ -2201,4 +2211,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
