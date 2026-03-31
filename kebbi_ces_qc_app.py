@@ -75,36 +75,36 @@ except Exception:
 # ---------------- COMMUNITY MAPPING DATA ----------------
 COMMUNITY_MAPPING_DATA = """Q2. Local Government Area	Q3.Ward	Q4. Community Name	community_name	Planned HH
 
-Aleiro	Aliero S Fada 1	Tudun Wada Bank	90111	55
-Aleiro	Aliero S Fada 2	Labana Area	90121	122
-Aleiro	Danwarai	Yamma	90131	232
-Aleiro	Jiga Birni	Rugga Amadu	90141	68
-Aleiro	Jiga Makera	Rugga Runtuwa	90151	66
-Argungu	Alwasa	Tungar Ruwa	90211	75
-Argungu	Galadima	Garkar Bawa Direba	90221	62
-Argungu	Gulma	Dutsin Dan Lamma	90231	61
-Argungu	Gwazange	Unguwar Malamai	90241	138
-Argungu	Kokani South	Shiyar Garba Layya Gabas	90251	66
-Bagudo	Bagudo Tuga	Bagudo Shiyar Malam Babba Gabas	90311	109
-Bagudo	Bahindi Khaliel	Bokki Doma Zabarmawa Ahmadu Kawa	90321	67
-Bagudo	Bani Tsamiya	Ruggar Malam Maishanu	90331	60
-Bagudo	Illo Sabon Gari	Tungan Hantsi	90341	98
-Bagudo	Kende Kurgu	Shiyar Noma Kende	90351	87
-Fakai	Bajida	Shiyar Hakimi Amadu Maikabi	90411	61
-Fakai	Bangu	Garin Tudu Unguwarsani Banawa	90421	100
-Fakai	Fakai Kuka	Phc Kukah Centre	90431	64
-Fakai	Kangi	Rugar Magaji Awwa	90441	70
-Fakai	Maikende	Kamtu Fada	90451	53
-Maiyama	Andarai	Andarai Kaura Gabas	90511	149
-Maiyama	Giwatazo	Gamjeji Arewa	90521	67
-Maiyama	Kawara	Ruwan Fili Rugga	90531	58
-Maiyama	Maiyama	Yarchediya	90541	68
-Maiyama	Mungadi	Unguwar Fulani	90551	83
-Shanga	Atuwo	Kyastu Ketare	90611	89
-Shanga	Dugu Tsoho	Waiwayi Ketre	90621	55
-Shanga	Gebbe	Binuwa Unguwan Noma	90631	100
-Shanga	Rafin Kirya	Runtuwon Kilmau	90641	56
-Shanga	Sakace	Unguwan Idi Dan Adamu	90651	60"""
+Aleiro	Aliero S Fada 1	Tudun Wada Bank	90111	27
+Aleiro	Aliero S Fada 2	Labana Area	90121	59
+Aleiro	Danwarai	Yamma	90131	89
+Aleiro	Jiga Birni	Rugga Amadu	90141	33
+Aleiro	Jiga Makera	Rugga Runtuwa	90151	32
+Argungu	Alwasa	Tungar Ruwa	90211	35
+Argungu	Galadima	Garkar Bawa Direba	90221	30
+Argungu	Gulma	Dutsin Dan Lamma	90231	30
+Argungu	Gwazange	Unguwar Malamai	90241	75
+Argungu	Kokani South	Shiyar Garba Layya Gabas	90251	30
+Bagudo	Bagudo Tuga	Bagudo Shiyar Malam Babba Gabas	90311	40
+Bagudo	Bahindi Khaliel	Bokki Doma Zabarmawa Ahmadu Kawa	90321	24
+Bagudo	Sharabi Kwanguwai	Famfarau Gabas	90331	53
+Bagudo	Zagga Kwasara	Nasarawa Fegi	90341	92
+Bagudo	Kende Kurgu	Shiyar Noma Kende	90351	31
+Fakai	Bajida	Shiyar Hakimi Amadu Maikabi	90411	35
+Fakai	Mahuta	Gidan Malam Kadiri	90421	30
+Fakai	Fakai Kuka	PHC Kukah Centre	90431	35
+Fakai	Marafa	Amiru Gabas	90441	35
+Fakai	Peni Peni	Avlaba	90451	65
+Maiyama	Andarai	Andarai Kaura Gabas	90511	60
+Maiyama	Giwatazo	Gamjeji Arewa	90521	35
+Maiyama	Sambawa Mayalo	Ruggaar Dikko Boyi	90531	25
+Maiyama	Maiyama	Yarchediya	90541	35
+Maiyama	Mungadi	Unguwar Fulani	90551	45
+Shanga	Yar Besse	Bela'Uwa Hirnawa	90611	60
+Shanga	Dugu Tsoho	Waiwayi Ketre	90621	25
+Shanga	Gebbe	Binuwa Unguwan Noma	90631	60
+Shanga	Rafin Kirya	Runtuwon Kilmau	90641	25
+Shanga	Sakace	Unguwan Idi Dan Adamu	90651	30"""
 
 # Parse community mapping data
 COMMUNITY_DF = pd.read_csv(StringIO(COMMUNITY_MAPPING_DATA), sep='\t')
@@ -578,8 +578,8 @@ def preprocess_data(sheets_dict):
     ]
     for col in text_cols_to_clean:
         if col in df_main.columns:
-            # Remove the   character and other problematic characters
-            df_main[col] = df_main[col].astype(str).str.replace(' ', '', regex=False)
+            # Remove the � character and other problematic characters
+            df_main[col] = df_main[col].astype(str).str.replace('�', '', regex=False)
             # Remove any trailing whitespace and non-printable characters
             df_main[col] = df_main[col].str.strip()
             # Remove any remaining non-alphanumeric characters from the end (except spaces in the middle)
@@ -2211,3 +2211,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
