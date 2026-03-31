@@ -1929,7 +1929,7 @@ def run_dashboard():
         st.success("✅ **No QC issues found!** All data quality checks passed successfully.")
         
         # COMPREHENSIVE Debug info to help understand why no issues found
-        with st.expander("🔍 DEBUG: Show ALL Columns & QC Check Results", expanded=True):
+        with st.expander("🔍 DEBUG: Show ALL Columns & QC Check Results", expanded=False):
             st.write(f"**Total records in filtered_df:** {len(filtered_df)}")
             st.write(f"**Total columns in filtered_df:** {len(filtered_df.columns)}")
             st.write(f"**Child records (child_infoo):** {len(child_infoo_df) if child_infoo_df is not None and not child_infoo_df.empty else 0}")
