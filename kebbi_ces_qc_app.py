@@ -2184,7 +2184,7 @@ def run_dashboard():
                 border-top: 3px solid #0077B5;'>
         <div style='display: flex; justify-content: center; align-items: center; gap: 1.5rem; flex-wrap: wrap; margin-bottom: 1rem;'>
             <div style='font-size: 0.95rem; color: #495057; font-weight: 500;'>
-                Created by <span style='color: #0077B5; font-weight: 700;'>Abdulrahaman</span>
+                Created by <span style='color: #0077B5; font-weight: 700;'>eHealth Africa</span>
             </div>
             <div style='border-left: 2px solid #dee2e6; height: 30px;'></div>
             <div style='font-size: 0.9rem; color: #6c757d;'>
