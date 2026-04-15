@@ -940,15 +940,16 @@ def create_timeline_chart(df):
 
 
 # ---------------- QC CHECKS FUNCTION ----------------
-def perform_qc_checks(df, child_df=None, full_df=None):
+def perform_qc_checks(df, child_df=None, full_df=None, child_info_df=None):
     """
     Perform comprehensive quality control checks on the dataset
     Returns a DataFrame with flagged issues by LGA, Ward, and Community
     
     Parameters:
     - df: The filtered dataframe to check
-    - child_df: The child_infoo dataframe
+    - child_df: The child_infoo dataframe (eligible children 1-59 months)
     - full_df: The full unfiltered dataframe (for building parent lookup)
+    - child_info_df: The child_info dataframe (all children roster)
     """
     qc_issues = []
     
@@ -1396,6 +1397,50 @@ def perform_qc_checks(df, child_df=None, full_df=None):
                                     'Row Index': idx
                                 })
     
+    # QC Check 8: Compare household's reported children count vs actual child_info records
+    if child_info_df is not None and not child_info_df.empty and '_submission__uuid' in child_info_df.columns:
+        # Find the column asking "How many children currently live in your household?"
+        children_in_hh_col = find_column(df, [
+            'How many children currently live in your household?',
+            'total_children',
+            'children_in_household',
+            'number_of_children',
+            'Q11. How many children',
+            'Q11',
+            'children_count'
+        ])
+        
+        if children_in_hh_col and uuid_col:
+            # Count actual child records per household from child_info sheet
+            child_counts = child_info_df.groupby('_submission__uuid').size().to_dict()
+            
+            # Check each household
+            for idx, row in df.iterrows():
+                household_uuid = row.get(uuid_col, None)
+                reported_count = pd.to_numeric(row.get(children_in_hh_col, 0), errors='coerce')
+                
+                if pd.isna(reported_count):
+                    reported_count = 0
+                else:
+                    reported_count = int(reported_count)
+                
+                # Get actual count from child_info sheet
+                actual_count = child_counts.get(household_uuid, 0)
+                
+                # Flag if counts don't match
+                if reported_count != actual_count and actual_count > 0:
+                    qc_issues.append({
+                        'LGA': row.get(lga_col, 'N/A') if lga_col else 'N/A',
+                        'Ward': row.get(ward_col, 'N/A') if ward_col else 'N/A',
+                        'Community': get_community_name(row.get(community_col, 'N/A')) if community_col else 'N/A',
+                        'Unique HH ID': row.get(unique_code_col, 'N/A') if unique_code_col else 'N/A',
+                        'Enumerator': row.get(enumerator_col, 'N/A') if enumerator_col else 'N/A',
+                        'Validation Status': row.get(validation_status_col, 'N/A') if validation_status_col else 'N/A',
+                        'Issue Type': 'Children Count Mismatch',
+                        'Description': f'Reported {reported_count} children in HH, but {actual_count} child records found (difference: {actual_count - reported_count:+d})',
+                        'Row Index': idx
+                    })
+    
     # Convert to DataFrame
     qc_df = pd.DataFrame(qc_issues)
     
@@ -1815,9 +1860,10 @@ def run_dashboard():
     # Approval Section - QC Checks (NOW BELOW DATA EXPLORER)
     st.markdown('<div class="section-header">Quality Control Checks</div>', unsafe_allow_html=True)
     
-    # Perform QC checks - pass main sheet and child_infoo sheet
+    # Perform QC checks - pass main sheet, child_infoo sheet, and child_info sheet
     child_infoo_df = sheets_dict.get('child_infoo', pd.DataFrame()) if sheets_dict else pd.DataFrame()
-    qc_results = perform_qc_checks(filtered_df, child_df=child_infoo_df, full_df=df)
+    child_info_df = sheets_dict.get('child_info', pd.DataFrame()) if sheets_dict else pd.DataFrame()
+    qc_results = perform_qc_checks(filtered_df, child_df=child_infoo_df, full_df=df, child_info_df=child_info_df)
     
     if not qc_results.empty:
         # Summary metrics
@@ -2184,7 +2230,7 @@ def run_dashboard():
                 border-top: 3px solid #0077B5;'>
         <div style='display: flex; justify-content: center; align-items: center; gap: 1.5rem; flex-wrap: wrap; margin-bottom: 1rem;'>
             <div style='font-size: 0.95rem; color: #495057; font-weight: 500;'>
-                Created by <span style='color: #0077B5; font-weight: 700;'>eHealth Africa</span>
+                Created by <span style='color: #0077B5; font-weight: 700;'>Abdulrahaman</span>
             </div>
             <div style='border-left: 2px solid #dee2e6; height: 30px;'></div>
             <div style='font-size: 0.9rem; color: #6c757d;'>
